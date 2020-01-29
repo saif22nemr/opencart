@@ -37,7 +37,7 @@ class ModelCostCost extends Model {
 		return $query->rows;
 	}
 	public function editCost($cost_id, $data = array()){
-		$val = $this->db->query("update ".DB_PREFIX."cost set description='".$this->db->escape($data['description'])."' , cost_value=".(int)$data['value'].",admin_id=".(int)$data['admin']." where cost_id=".(int)$cost_id);
+		$val = $this->db->query("update ".DB_PREFIX."cost set description='".$this->db->escape($data['description'])."' , cost_value=".(int)$data['value'].", cost_id=".(int)$data['cost_id'].",admin_id=".(int)$data['admin']." where cost_id=".(int)$cost_id);
 		return $val;
 	}
 	public function deleteCost($id=0){

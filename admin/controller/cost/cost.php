@@ -54,10 +54,63 @@ class ControllerCostCost extends Controller {
 		$this->document->setTitle($this->language->get('heading_title'));
 
 		$this->load->model('cost/cost');
+		if (($this->request->server['REQUEST_METHOD'] == 'POST') && isset($this->request->post['type']) && $this->request->post['type']  == 'json') {
+			//print_r($this->request->post);
 
-		if (($this->request->server['REQUEST_METHOD'] == 'POST') && $this->validateForm()) {
+			if (!$this->user->hasPermission('modify', 'cost/cost')) {
+				$this->response->addHeader('Content-Type: application/json');
+				$data = ['status'=>'error','error'=>$this->language->get('error_permission')];
+				$this->response->setOutput(json_encode($data));
+				return json_encode($data);
+			}
+			if(!isset($this->request->post['type']) or $this->request->post['type'] != 'json')
+				return reponse()->json(['status'=>'error','error'=> 'The type must be json']);
+			if(isset($this->request->post['description']) and utf8_strlen($this->request->post['description']) < 1){
+				$this->response->addHeader('Content-Type: application/json');
+				$data = ['status'=>'error','error'=>$this->language->get('error_description')];
+				$this->response->setOutput(json_encode($data));
+				return json_encode($data);
+			}
+
+			if(isset($this->request->post['value']) and (!is_numeric($this->request->post['value']) or ($this->request->post['value'] < 1  or $this->request->post['value'] > 10000000))){
+				$this->response->addHeader('Content-Type: application/json');
+				$data = ['status'=>'error','error'=>$this->language->get('error_value')];
+				$this->response->setOutput(json_encode($data));
+				return json_encode($data);
+			}
+			//get some info.
+			$posts = $this->request->post;
+			//print_r($posts);
+			$v = $this->model_cost_cost->getCost($this->request->get['cost_id']);
+			$posts['admin'] = $v['admin_id'];
+			if(!isset($this->request->post['cost_id']))
+				$posts['cost_id'] = $v['cost_id'];
+			if(!isset($this->request->post['description']))
+				$posts['description'] = $v['description'];
+
+			$val = $this->model_cost_cost->editCost($this->request->get['cost_id'],$posts);
+			$cost= $this->model_cost_cost->getCost($posts['cost_id']);
+			$data = [
+						'status' => 'success',
+						'success'=>'successfull edit',
+						'edit' => $this->url->link('cost/cost/edit', 'user_token=' . $this->session->data['user_token'] . '&cost_id=' . $cost['cost_id'], true),
+					];
+			if($val == 1) {
+				$this->response->addHeader('Content-Type: application/json');
+				$this->response->setOutput(json_encode($data));
+				return json_encode($data);
+				
+			exit();
+			}
+
+			else return json_encode(['status'=>'error','error'=>'Error in edit']);
+
+		}
+		else if (($this->request->server['REQUEST_METHOD'] == 'POST') && $this->validateForm()) {
+			$posts = $this->request->post;
+			$posts['cost_id'] = $this->request->get['cost_id'];;
 			$this->model_cost_cost->editCost($this->request->get['cost_id'], $this->request->post);
-
+			
 			$this->session->data['success'] = $this->language->get('text_success');
 
 			$url = '';
@@ -73,7 +126,10 @@ class ControllerCostCost extends Controller {
 			if (isset($this->request->get['page'])) {
 				$url .= '&page=' . $this->request->get['page'];
 			}
-
+			if(isset($this->request->post['type']) and $this->request->post['type'] == 'json'){
+				$cost = $this->model_cost_cost->getCost($this->request->get['cost_id']);
+				return json_encode(['data'=>$cost],200);
+			}
 			$this->response->redirect($this->url->link('cost/cost', 'user_token=' . $this->session->data['user_token'] . $url, true));
 		}
 
@@ -152,7 +208,7 @@ class ControllerCostCost extends Controller {
 
 		$data['add'] = $this->url->link('cost/cost/add', 'user_token=' . $this->session->data['user_token'] . $url, true);
 		$data['delete'] = $this->url->link('cost/cost/delete', 'user_token=' . $this->session->data['user_token'] . $url, true);
-		$data['repair'] = $this->url->link('cost/cost/repair', 'user_token=' . $this->session->data['user_token'] . $url, true);
+		
 
 		$data['costs'] = array();
 
@@ -342,7 +398,18 @@ class ControllerCostCost extends Controller {
 
 		$this->response->setOutput($this->load->view('cost/cost_form', $data));
 	}
-
+	// protected function validateAjax(){
+	// 	if (!$this->user->hasPermission('modify', 'cost/cost')) {
+	// 		return json_encode(['error'=>$this->language->get('error_permission')]);
+	// 	}
+	// 	if(!isset($this->request->post['type']) or $this->request->post['type'] != 'json')
+	// 		return reponse()->json(['error'=> 'The type must be json']);
+	// 	if(isset($this->request->post['description']) and utf8strlen($this->request->post['description']) < 1)
+	// 		return json_encode(['error',$this->language->get('error_description')]);
+	// 	if(isset($this->request->post['value']) and !is_numeric($this->request->post['value']) or ($this->request->post['value'] < 1  and $this->request->post['value'] > 10000000))
+	// 		return json_encode(['error',$this->language->get('error_value')]);
+	// 	return false;
+	// }
 	protected function validateForm() {
 		if (!$this->user->hasPermission('modify', 'cost/cost')) {
 			$this->error['warning'] = $this->language->get('error_permission');
@@ -353,16 +420,18 @@ class ControllerCostCost extends Controller {
 		}
 		//cost_value
 		if (!isset($this->request->post['value']) or !is_numeric($this->request->post['value']) or $this->request->post['value'] < 1 or $this->request->post['value'] > 100000000) {
-			$this->error['description'] = $this->language->get('error_value');
+			$this->error['value'] = $this->language->get('error_value');
 		}
 
-		if (!isset($this->request->post['admin']) or !is_numeric($this->request->post['admin'])) {
-			$this->error['description'] = $this->language->get('error_value');
-		}else{
-			$this->load->model('user/user');
-			$admin = $this->model_user_user->getUserAdmin($this->request->post['admin']);
-			if(!isset($admin['user_id']))
-				$this->error['admin'] = $this->language->get('error_admin');
+		if(!isset($this->request->post['type'])){
+			if (!isset($this->request->post['admin']) or !is_numeric($this->request->post['admin'])) {
+				$this->error['admin'] = $this->language->get('error_value');
+			}else{
+				$this->load->model('user/user');
+				$admin = $this->model_user_user->getUserAdmin($this->request->post['admin']);
+				if(!isset($admin['user_id']))
+					$this->error['admin'] = $this->language->get('error_admin');
+			}
 		}
 
 		if (isset($this->request->get['cost_id'])){
@@ -374,7 +443,7 @@ class ControllerCostCost extends Controller {
 		if ($this->error && !isset($this->error['warning'])) {
 			$this->error['warning'] = $this->language->get('error_warning');
 		}
-
+		
 		return !$this->error;
 	}
 

@@ -15,8 +15,8 @@ $_['text_cost_field']        = 'Add New Cost';
 $_['column_name']            = 'Admin Name';
 $_['column_description']     = 'Description';
 $_['column_value']           = 'Value';
-$_['column_id']           = 'ID';
 $_['column_action']          = 'Action';
+$_['column_id']              = 'ID';
 
 // Entry
 $_['entry_name']             = 'Admin Name';
@@ -40,4 +40,4 @@ $_['error_description']      = 'Cost Description must be between 1 and 1000 char
 $_['error_value']            = 'Cost Value must be integer and bigger than 0';
 $_['error_cost']             = 'Cost not exit';
 $_['error_fail_add']         = 'Fail add new cost, try again!';
-$_['error_admin']         	 = 'The admin not exist';
+$_['error_admin']            = '';

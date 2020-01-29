@@ -13,7 +13,7 @@
       </ul>
     </div>
   </div>
-  <div class="container-fluid">
+  <div class="container-fluid message">
     {% if error_warning %}
     <div class="alert alert-danger alert-dismissible"><i class="fa fa-exclamation-circle"></i> {{ error_warning }}
       <button type="button" class="close" data-dismiss="alert">&times;</button>
@@ -59,16 +59,16 @@
                     {% else %}
                     <input type="checkbox" name="selected[]" value="{{ cost.cost_id }}" />
                     {% endif %}</td>
-                  <td class="text-left">{{ cost.cost_id }}</td>
+                  <td class="text-left update id">{{ cost.cost_id }}</td>
                   <td class="text-left">{{ cost.name }}</td>
-                  <td class="text-left description">{{ cost.description }}</td>
-                  <td class="text-left">{{ cost.value }}</td>
-                  <td class="text-right"><a href="{{ cost.edit }}" data-toggle="tooltip" title="{{ button_edit }}" class="btn btn-primary"><i class="fa fa-pencil"></i></a></td>
+                  <td class="text-left update description">{{ cost.description }}</td>
+                  <td class="text-left update value">{{ cost.value }}</td>
+                  <td class="text-right edit"><a href="{{ cost.edit }}" data-toggle="tooltip" title="{{ button_edit }}" class="btn btn-primary"><i class="fa fa-pencil"></i></a></td>
                 </tr>
                 {% endfor %}
                 {% else %}
                 <tr>
-                  <td class="text-center" colspan="5">{{ text_no_results }}</td>
+                  <td class="text-center" colspan="6">{{ text_no_results }}</td>
                 </tr>
                 {% endif %}
               </tbody>
@@ -85,13 +85,103 @@
 </div>
 <script type="text/javascript">
   $(function(){
-    $('.description').click(function(){
-      var getDescription = $(this).text();
-      var description = "<textarea name='description' placeholder='{{ entry_description }}' id='input-description' data-toggle='summernote' data-lang='{{ summernote }}' class='form-control'>"+getDescription+"</textarea>";
-      $(this).html(description);
-      $(this).removeClass('description');
-      console.log(getDescription);  
+    var myGlobal = '';
+    $('body').delegate('td.update','click',function(event){
+        var getDescription = $(this).text();
+        myGlobal = getDescription;
+        if($(this).hasClass('value')){
+          var html = "<input type='text' name='value' value='"+getDescription+"' class='new-value form-control'>";
+        }
+        else if($(this).hasClass('id')){
+          var html = "<input type='text' name='cost_id' value='"+getDescription+"' class='new-value form-control'>";
+        }
+        else
+          var html = "<textarea name='description' placeholder='{{ entry_description }}' id='input-description' data-toggle='summernote' data-lang='{{ summernote }}' class='form-control new-value'>"+getDescription+"</textarea>";
+        
+        $(this).text('');
+        $(this).append(html);
+        $(this).next().focusin();
+        $(this).removeClass("update");
+        //event.preventDefault();
     });
+    $('td').delegate('.new-value','blur',function(event){
+      var value = $(this).val();
+      var column = '';
+      if($(this).hasClass('id'))
+        console.log('has');
+      else
+        console.log($(this));
+      if($(this).parent().hasClass('value')) {
+        var description = $(this).parent().siblings('.description').text();
+        var data = {
+          value : value,
+          description : description,
+          type : 'json'
+        };
+      }else if($(this).parent().hasClass('id')){
+        var val = $(this).parent().siblings('.value').text();
+        var data = {
+          value : val,
+          cost_id : value,
+          type: 'json'
+        };
+      }
+      else {
+        var val = $(this).parent().siblings('.value').text();
+        var data = {
+          value : val,
+          description : value,
+          type: 'json'
+        };
+      }
+        
+      
+      var editUrl = $(this).parent().siblings('.edit').children('a').attr('href');
+      window.myData = '';
+      var myData = '';
+      //console.log(editUrl);
+      $.ajax({
+        url: editUrl,
+        method: "post",
+        datatype:"json",
+        data: data,
+        cache: false,
+        complete: function(data,status){
+          if(status == 'success'){
+            var d = data['responseJSON'];
+            window.myData = d['status'];
+            console.log(d);
+            if(d['status'] == 'success'){
+              $(this).parent().siblings('.edit').children('a').attr('href',d['edit']);
+              var content = '<div style="display:none;font-family=Arial;font-size:16px;padding-left:10px" class="alert alert-success alert-dismissible"><i class="fa fa-exclamation-circle" style="padding-right:10px"></i>'+d['success']+'<button type="button" class="close" data-dismiss="alert">&times;</button></div>';
+              $('.message').prepend(content);
+              
+              $('.message > div.alert').fadeIn(200).delay(5000).fadeOut(400);
+          }else if(d['status'] == 'error'){
+            var content = '<div style="font-family=Arial;display:none;font-size:16px;padding-left:10px" class="alert alert-danger alert-dismissible"><i class="fa fa-exclamation-circle" style="padding-right:10px"></i>'+d['error']+'<button type="button" class="close" data-dismiss="alert">&times;</button></div>';
+            console.log(d['error']);
+            value = myGlobal;
+          $(this).parent().text(value).addClass('10');
+          $('.message').prepend(content);
+          $('.message > div.alert').fadeIn(200).delay(5000).fadeOut(400);
+          }
+          }else{
+
+          }
+          
+        },
+
+      });
+      //$(this).parent().text(myGlobal).addClass('update');
+    $(this).parent().text(value).addClass('update');
+      $(this).remove();
+      $('.message > div.alert').remove();
+      
+    });
+
+    // $('.description').click(function(event){
+      
+    // });
     
   });
 </script>
