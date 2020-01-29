@@ -83,27 +83,46 @@ class ControllerCostCost extends Controller {
 			//print_r($posts);
 			$v = $this->model_cost_cost->getCost($this->request->get['cost_id']);
 			$posts['admin'] = $v['admin_id'];
+			if(isset($this->request->post['cost_id'])){
+				if(!is_numeric($this->request->post['cost_id']) or $this->request->post['cost_id'] <= 0){
+					$this->response->addHeader('Content-Type: application/json');
+					$data = ['status'=>'error','error'=>$this->language->get('error_cost')];
+					$this->response->setOutput(json_encode($data));
+					return json_encode($data);
+				}
+
+			}
 			if(!isset($this->request->post['cost_id']))
 				$posts['cost_id'] = $v['cost_id'];
 			if(!isset($this->request->post['description']))
 				$posts['description'] = $v['description'];
 
 			$val = $this->model_cost_cost->editCost($this->request->get['cost_id'],$posts);
-			$cost= $this->model_cost_cost->getCost($posts['cost_id']);
-			$data = [
-						'status' => 'success',
-						'success'=>'successfull edit',
-						'edit' => $this->url->link('cost/cost/edit', 'user_token=' . $this->session->data['user_token'] . '&cost_id=' . $cost['cost_id'], true),
-					];
+			//$cost= $this->model_cost_cost->getCost($posts['cost_id']);
+			
 			if($val == 1) {
 				$this->response->addHeader('Content-Type: application/json');
+				$data = [
+						'status' => 'success',
+						'success'=>'Successfull Edit',
+						'edit' => $this->url->link('cost/cost/edit', 'user_token=' . $this->session->data['user_token'] . '&cost_id=' . $posts['cost_id'], true),
+					];
 				$this->response->setOutput(json_encode($data));
 				return json_encode($data);
-				
-			exit();
+			}else{
+				$this->response->addHeader('Content-Type: application/json');
+				$data = [
+						'status' => 'error',
+						'error'=>$this->landuage->get('error_fail_edit'),
+						'edit' => $this->url->link('cost/cost/edit', 'user_token=' . $this->session->data['user_token'] .'&cost_id='. $this->request->get('cost_id'), true),
+					];
+				$this->response->setOutput(json_encode($data));
+				return json_encode($data);
 			}
-
-			else return json_encode(['status'=>'error','error'=>'Error in edit']);
+			$this->response->addHeader('Content-Type: application/json');
+			$data = ['status'=>'error','error'=>'Error in edit'];
+			$this->response->setOutput(json_encode($data));
+			return json_encode($data);
 
 		}
 		else if (($this->request->server['REQUEST_METHOD'] == 'POST') && $this->validateForm()) {
