@@ -108,9 +108,9 @@
       var value = $(this).val();
       var column = '';
       if($(this).hasClass('id'))
-        console.log('has');
+        //console.log('has');
       else
-        console.log($(this));
+        //console.log($(this));
       if($(this).parent().hasClass('value')) {
         var description = $(this).parent().siblings('.description').text();
         var data = {
@@ -139,7 +139,7 @@
       var editUrl = $(this).parent().siblings('.edit').children('a').attr('href');
       window.myData = '';
       var myData = '';
-      //console.log(editUrl);
+      ////console.log(editUrl);
       $.ajax({
         url: editUrl,
         method: "post",
@@ -151,28 +151,29 @@
           
           if(status == 'success'){
             var d = data['responseJSON'];
-            console.log(d);
+            //console.log('home');
+            //console.log(d);
             //window.myData = d['status'];
             if(d['status'] == 'success'){
               $(this).parent().siblings('.edit').children('a').attr('href',d['edit']);
               var content = '<div style="display:none;font-family=Arial;font-size:13px;padding-left:10px" class="alert alert-success alert-dismissible"><i class="fa fa-exclamation-circle" style="padding-right:10px"></i>'+d['success']+'<button type="button" class="close" data-dismiss="alert">&times;</button></div>';
               $('.message').prepend(content);
-              $('.edit > a').attr('href',d['edit']);
+              //$('.edit > a').attr('href',d['edit']);
               var h = $('.edit > a').attr('href');
-              console.log(h);
+              //console.log(h);
               $('.message > div.alert').fadeIn(200).delay(5000).fadeOut(400);
             }else if(d['status'] == 'error'){
               var content = '<div style="font-family=Arial;display:none;font-size:13px;padding-left:10px" class="alert alert-danger alert-dismissible"><i class="fa fa-exclamation-circle" style="padding-right:10px"></i>'+d['error']+'<button type="button" class="close" data-dismiss="alert">&times;</button></div>';
-              console.log(d['error']);
+              //console.log(d['error']);
               value = myGlobal;
-            $(this).parent().text(value).addClass('10');
+            //$(this).parent().text(value).addClass('10');
             $('.message').prepend(content);
             $('.message > div.alert').fadeIn(200).delay(5000).fadeOut(400);
             }
-            console.log(editUrl);
+            //console.log(editUrl);
           }else{
-            console.log('error ------------------------------------------------ '+status);
-            console.log(editUrl);
+            //console.log('error ------------------------------------------------ '+status);
+            //console.log(editUrl);
           }
           
         },
