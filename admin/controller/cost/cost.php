@@ -55,26 +55,31 @@ class ControllerCostCost extends Controller {
 
 		$this->load->model('cost/cost');
 		if (($this->request->server['REQUEST_METHOD'] == 'POST') && isset($this->request->post['type']) && $this->request->post['type']  == 'json') {
-			//print_r($this->request->post);
-
+		
 			if (!$this->user->hasPermission('modify', 'cost/cost')) {
 				$this->response->addHeader('Content-Type: application/json');
 				$data = ['status'=>'error','error'=>$this->language->get('error_permission')];
 				$this->response->setOutput(json_encode($data));
 				return json_encode($data);
 			}
-			if(!isset($this->request->post['type']) or $this->request->post['type'] != 'json')
-				return reponse()->json(['status'=>'error','error'=> 'The type must be json']);
+			$oldCost = $this->model_cost_cost->getCost($this->request->get['cost_id']);
+			//just for make sure it's exit
+			if(!isset($oldCost['cost_value'])){
+				$this->response->addHeader('Content-Type: application/json');
+				$data = ['status'=>'error','error'=>$this->language->get('error_description'),'cost'=>$oldCost];
+				$this->response->setOutput(json_encode($data));
+				return json_encode($data);
+			}
 			if(isset($this->request->post['description']) and utf8_strlen($this->request->post['description']) < 1){
 				$this->response->addHeader('Content-Type: application/json');
-				$data = ['status'=>'error','error'=>$this->language->get('error_description')];
+				$data = ['status'=>'error','error'=>$this->language->get('error_description'),'cost'=>$oldCost];
 				$this->response->setOutput(json_encode($data));
 				return json_encode($data);
 			}
 
 			if(isset($this->request->post['value']) and (!is_numeric($this->request->post['value']) or ($this->request->post['value'] < 1  or $this->request->post['value'] > 10000000))){
 				$this->response->addHeader('Content-Type: application/json');
-				$data = ['status'=>'error','error'=>$this->language->get('error_value')];
+				$data = ['status'=>'error','error'=>$this->language->get('error_value'),'cost'=>$oldCost];
 				$this->response->setOutput(json_encode($data));
 				return json_encode($data);
 			}
@@ -86,7 +91,7 @@ class ControllerCostCost extends Controller {
 			if(isset($this->request->post['cost_id'])){
 				if(!is_numeric($this->request->post['cost_id']) or $this->request->post['cost_id'] <= 0){
 					$this->response->addHeader('Content-Type: application/json');
-					$data = ['status'=>'error','error'=>$this->language->get('error_cost')];
+					$data = ['status'=>'error','error'=>$this->language->get('error_cost'),'cost'=>$oldCost];
 					$this->response->setOutput(json_encode($data));
 					return json_encode($data);
 				}
@@ -115,12 +120,13 @@ class ControllerCostCost extends Controller {
 						'status' => 'error',
 						'error'=>$this->landuage->get('error_fail_edit'),
 						'edit' => $this->url->link('cost/cost/edit', 'user_token=' . $this->session->data['user_token'] .'&cost_id='. $this->request->get('cost_id'), true),
+						'cost' => $oldCost,
 					];
 				$this->response->setOutput(json_encode($data));
 				return json_encode($data);
 			}
 			$this->response->addHeader('Content-Type: application/json');
-			$data = ['status'=>'error','error'=>'Error in edit'];
+			$data = ['status'=>'error','error'=>'Error in edit','cost'=>$oldCost];
 			$this->response->setOutput(json_encode($data));
 			return json_encode($data);
 
@@ -154,7 +160,7 @@ class ControllerCostCost extends Controller {
 
 		$this->getForm();
 	}
-
+	
 	public function delete() {
 		$this->load->language('cost/cost');
 

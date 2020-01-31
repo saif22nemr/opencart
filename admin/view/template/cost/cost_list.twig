@@ -85,9 +85,11 @@
 </div>
 <script type="text/javascript">
   $(function(){
+    'use strict';
     var myGlobal = '';
     $('body').delegate('td.update','click',function(event){
         var getDescription = $(this).text();
+        $(this).addClass('editable');
         myGlobal = getDescription;
         if($(this).hasClass('value')){
           var html = "<input type='text' name='value' value='"+getDescription+"' class='new-value form-control'>";
@@ -107,9 +109,8 @@
     $('td').delegate('.new-value','blur',function(event){
       var value = $(this).val();
       var column = '';
-      if($(this).hasClass('id'))
-        //console.log('has');
-      else
+      var loc = $(this);
+      
         //console.log($(this));
       if($(this).parent().hasClass('value')) {
         var description = $(this).parent().siblings('.description').text();
@@ -137,9 +138,9 @@
         
       
       var editUrl = $(this).parent().siblings('.edit').children('a').attr('href');
-      window.myData = '';
-      var myData = '';
-      ////console.log(editUrl);
+        
+      // console.log("get url : "+editUrl);
+      // console.log(data);
       $.ajax({
         url: editUrl,
         method: "post",
@@ -147,39 +148,61 @@
         data: data,
         cache: false,
         complete: function(data,status){
-          
-          
+          // console.log(data);
+          var d = data['responseJSON'];
+          // alert(JSON.stringify(data));
+          //console.log(data);
           if(status == 'success'){
-            var d = data['responseJSON'];
+            //var d = data['responseJSON'];
             //console.log('home');
-            //console.log(d);
+            
             //window.myData = d['status'];
             if(d['status'] == 'success'){
-              $(this).parent().siblings('.edit').children('a').attr('href',d['edit']);
-              var content = '<div style="display:none;font-family=Arial;font-size:13px;padding-left:10px" class="alert alert-success alert-dismissible"><i class="fa fa-exclamation-circle" style="padding-right:10px"></i>'+d['success']+'<button type="button" class="close" data-dismiss="alert">&times;</button></div>';
+              //console.log(d);
+            //console.log(d['edit']);
+              if($('tr td.editable').hasClass('id')){
+                var myUrl = d['edit'].replace('&amp;','&');
+                myUrl = myUrl.replace('&amp;','&');
+                $('table tr td.editable').siblings('.edit').children('a').attr('href',myUrl);
+              }
+                
+
+                var content = '<div style="display:none;font-family=Arial;font-size:13px;padding-left:10px" class="alert alert-success alert-dismissible"><i class="fa fa-exclamation-circle" style="padding-right:10px"></i>'+d['success']+'<button type="button" class="close" data-dismiss="alert">&times;</button></div>';
+                $('.message').prepend(content);
+                //$('.edit > a').attr('href',d['edit']);
+                var h = $('.edit > a').attr('href');
+                //console.log(h);
+                $('.message > div.alert').fadeIn(200).delay(5000).fadeOut(400);
+              }else if(d['status'] == 'error'){
+                var content = '<div style="font-family=Arial;display:none;font-size:13px;padding-left:10px" class="alert alert-danger alert-dismissible"><i class="fa fa-exclamation-circle" style="padding-right:10px"></i>'+d['error']+'<button type="button" class="close" data-dismiss="alert">&times;</button></div>';
+                //console.log(d['error']);
+                var oldCost = d['cost'];
+                // var des = $(this).parent().text('home');
+                // loc.addClass('this');
+                // console.log();
+                if($('table tr td.editable').hasClass('description'))
+                  $('table tr td.editable').text(oldCost['description']);
+                else if($('table tr td.editable').hasClass('value'))
+                  $('table tr td.editable').text(oldCost['cost_value']);
+                else if($('table tr td.editable').hasClass('id'))
+                  $('table tr td.editable').text(oldCost['cost_id']);
+
+               
+              //$(this).parent().text(value).addClass('10');
               $('.message').prepend(content);
-              //$('.edit > a').attr('href',d['edit']);
-              var h = $('.edit > a').attr('href');
-              //console.log(h);
               $('.message > div.alert').fadeIn(200).delay(5000).fadeOut(400);
-            }else if(d['status'] == 'error'){
-              var content = '<div style="font-family=Arial;display:none;font-size:13px;padding-left:10px" class="alert alert-danger alert-dismissible"><i class="fa fa-exclamation-circle" style="padding-right:10px"></i>'+d['error']+'<button type="button" class="close" data-dismiss="alert">&times;</button></div>';
-              //console.log(d['error']);
-              value = myGlobal;
-            //$(this).parent().text(value).addClass('10');
-            $('.message').prepend(content);
-            $('.message > div.alert').fadeIn(200).delay(5000).fadeOut(400);
+              }
+              //console.log(editUrl);
+            }else{
+              console.log('error ------------------------------------------------> '+status);
+              //console.log(editUrl);
             }
-            //console.log(editUrl);
-          }else{
-            //console.log('error ------------------------------------------------ '+status);
-            //console.log(editUrl);
-          }
-          
+          $('tr td.editable').removeClass('editable');
         },
 
       });
       //$(this).parent().text(myGlobal).addClass('update');
+     
     $(this).parent().text(value).addClass('update');
       $(this).remove();
       $('.message > div.alert').remove();
